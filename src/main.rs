@@ -9,7 +9,7 @@ struct Score {
 async fn main() -> anyhow::Result<()> {
     println!("Bienvenue sur le serveur de vote !");
     println!("Les commandes valides sont : voter, votants ou score");
-    let mut votants = vec!["Jean Terouak", "Franky Vincent", "Jean-Pierre Pernaut", "Brice Binouze", "Brigitte Bibine"];
+    let mut votants = vec![String::from("Jean Terouak"), String::from("Franky Vincent"), String::from("Jean-Pierre Pernaut"), String::from("Brice Binouze"), String::from("Brigitte Bibine")];
     let mut scores = vec![
         Score { nom: "Grahargul le destructeur de mondes".to_string(), score: 4 },
         Score { nom: "Titi le gentil".to_string(), score: 0 },
@@ -26,7 +26,8 @@ async fn main() -> anyhow::Result<()> {
                 println!("Quel votant êtes-vous ?");
                 let mut votant = String::new();
                 io::stdin().read_line(&mut votant)?;
-                if votants.contains(&votant.trim()) {
+                votant = votant.trim().to_string();
+                if votants.contains(&votant) {
                     println!("Vous avez déjà voté !");
                 } else {
                     println!("Pour qui voulez-vous voter ?");
@@ -52,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
                         }
                     }
                     
-                    votants.push(votant.trim());
+                    votants.push(votant.trim().to_string());
                 }
             },
             "votants" => {

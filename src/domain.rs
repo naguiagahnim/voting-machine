@@ -1,8 +1,6 @@
 use std::collections::BTreeMap as Map;
 use std::collections::BTreeSet as Set;
 
-use crate::configuration::Configuration;
-
 #[derive(Hash, Eq, PartialEq, Debug, Ord, PartialOrd, Clone)]
 pub struct Voter(pub String);
 
@@ -51,8 +49,7 @@ impl Scoreboard {
 }
 
 impl VotingMachine {
-    pub fn new(configuration: &Configuration) -> Self {
-        let scoreboard1 = Scoreboard::new(configuration);
+    pub fn new(scoreboard1 : Scoreboard) -> Self {
         VotingMachine {
             voters: AttendanceSheet(Set::new()),
             scoreboard: scoreboard1,

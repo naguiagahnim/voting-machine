@@ -10,8 +10,6 @@ pub struct Configuration {
 impl Configuration {
     pub fn new() -> Self {
         let mut config = Self::parse();
-        config.candidates.push("Blanc".to_string());
-        config.candidates.push("Nul".to_string());
         config
     }
 }

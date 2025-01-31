@@ -1,78 +1,55 @@
-use std::{io, vec};
-
+use std::{io, collections::BTreeMap as Map};
 use crate::configuration::Configuration;
+use crate::domain::{Candidate, Voter, BallotPaper, VoteOutcome, VotingMachine, Scoreboard};
 
-struct Score {
-    nom: String,
-    score: i32
-}
-
-
-pub async fn run_app(configuration : Configuration) -> anyhow::Result<()> {
+pub async fn run_app(configuration: Configuration) -> anyhow::Result<()> {
     println!("Bienvenue sur le serveur de vote !");
     println!("Les commandes valides sont : voter, votants ou score");
-    let mut votants = vec![String::from("Brice Binouze")];
-    let mut scores: Vec<Score> = configuration.candidates
-        .iter()
-        .map(|name| Score {
-            nom: name.to_string(),
-            score: 0,
-        })
-        .collect();
+    
+    let candidates: Vec<Candidate> = configuration.candidates.iter().map(|c| Candidate(c.clone())).collect();
+    let scoreboard = Scoreboard::new(candidates);
+    let mut voting_machine = VotingMachine::new(scoreboard);
+    
     loop {
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-
+        
         match input.trim() {
             "voter" => {
-                println!("Quel votant êtes-vous ?");
-                let mut votant = String::new();
-                io::stdin().read_line(&mut votant)?;
-                votant = votant.trim().to_string();
-                if votants.contains(&votant) {
-                    println!("Vous avez déjà voté !");
-                } else {
-                    println!("Pour qui voulez-vous voter ?");
-                    let mut nom = String::new();
-                    io::stdin().read_line(&mut nom)?;
-                    let nom = nom.trim();
-                    
-                    if nom.is_empty() {
-                        // Vote blanc
-                        if let Some(score) = scores.iter_mut().find(|s| s.nom == "Blanc") {
-                            score.score += 1;
-                            println!("Vote blanc enregistré");
-                        }
-                    } else if let Some(score) = scores.iter_mut().find(|s| s.nom == nom) {
-                        // Vote pour un candidat existant
-                        score.score += 1;
-                        println!("Vote enregistré pour {}", nom);
-                    } else {
-                        // Vote nul (candidat non trouvé)
-                        if let Some(score) = scores.iter_mut().find(|s| s.nom == "Nul") {
-                            score.score += 1;
-                            println!("Vote nul enregistré (candidat non trouvé)");
-                        }
-                    }
-                    
-                    votants.push(votant.trim().to_string());
+                println!("Quel est votre nom ?");
+                let mut votant_name = String::new();
+                io::stdin().read_line(&mut votant_name)?;
+                let votant = Voter(votant_name.trim().to_string());
+                
+                println!("Pour qui voulez-vous voter ? (Laissez vide pour un vote blanc)");
+                let mut nom = String::new();
+                io::stdin().read_line(&mut nom)?;
+                let candidate_name = nom.trim().to_string();
+                let candidate = if candidate_name.is_empty() { None } else { Some(Candidate(candidate_name)) };
+                
+                let ballot = BallotPaper { voter: votant.clone(), candidate };
+                match voting_machine.vote(ballot) {
+                    VoteOutcome::AcceptedVote(_, c) => println!("Vote enregistré pour {}", c.0),
+                    VoteOutcome::BlankVote(_) => println!("Vote blanc enregistré"),
+                    VoteOutcome::InvalidVote(_) => println!("Vote nul enregistré (candidat non trouvé)"),
+                    VoteOutcome::HasAlreadyVoted(_) => println!("Vous avez déjà voté !"),
                 }
             },
             "votants" => {
-                println!("Voici la liste des votants :");
-                for votant in &votants {
-                    println!("• {}", votant);
+                println!("Liste des votants :");
+                for votant in &voting_machine.get_voters().0 {
+                    println!("• {}", votant.0);
                 }
             },
             "score" => {
                 println!("Scores actuels :");
-                for score in &scores {
-                    println!("• {} : {}", score.nom, score.score);
+                for (candidate, score) in &voting_machine.get_scoreboard().scores {
+                    println!("• {} : {}", candidate.0, score.0);
                 }
+                println!("• Blanc : {}", voting_machine.get_scoreboard().blank_score.0);
+                println!("• Nul : {}", voting_machine.get_scoreboard().invalid_score.0);
             },
-            "" => println!("Erreur : Saisissez une commande parmi voter, votants ou score"),
-            _ => println!("Erreur : Commande invalide ! Les commandes valides sont : voter, votants ou score"),
+            _ => println!("Commande invalide ! Les commandes valides sont : voter, votants ou score"),
         }
     }
-    Ok(())
 }

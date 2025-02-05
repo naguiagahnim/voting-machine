@@ -4,13 +4,16 @@ use std::collections::BTreeSet as Set;
 #[derive(Hash, Eq, PartialEq, Debug, Ord, PartialOrd, Clone)]
 pub struct Voter(pub String);
 
-#[derive(Hash, Eq, PartialEq, Debug, Ord, PartialOrd)]
+#[derive(Hash, Eq, PartialEq, Debug, Ord, PartialOrd, Clone)]
 pub struct Candidate(pub String);
 
+#[derive(Debug, Clone)]
 pub struct Score(pub usize);
 
+#[derive(Debug, Clone)]
 pub struct AttendanceSheet(pub Set<Voter>);
 
+#[derive(Debug, Clone)]
 pub struct Scoreboard{
     pub scores: Map<Candidate, Score>,
     pub blank_score: Score,
@@ -29,6 +32,7 @@ pub enum VoteOutcome {
     HasAlreadyVoted(Voter),
 }
 
+#[derive(Debug, Clone)]
 pub struct VotingMachine{
     voters : AttendanceSheet,
     scoreboard: Scoreboard,

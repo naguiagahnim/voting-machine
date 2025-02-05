@@ -88,3 +88,73 @@ impl VotingMachine {
         &self.voters
     }
 }
+
+#[cfg(test)]
+mod tests{
+    use super::*;
+
+
+    fn setup() -> VotingMachine {
+        let candidates: Vec<Candidate> = vec![Candidate(String::from("Grahargul le Destructeur de Mondes")), Candidate(String::from("Jean-Marie Bigard"))];
+        let scoreboard = Scoreboard::new(candidates);
+        let voting_machine = VotingMachine::new(scoreboard);
+        voting_machine
+    }
+
+    #[test]
+    fn accepted_vote(){
+        let BallotPaper = BallotPaper {
+            voter: Voter(String::from("Claude")),
+            candidate: Some(Candidate(String::from("Grahargul le Destructeur de Mondes"))),
+        };
+        let mut voting_machine = setup();
+                let result = voting_machine.vote(BallotPaper);
+                assert!(matches!(result, VoteOutcome::AcceptedVote(_, _)));
+    }
+
+    #[test]
+    fn blank_vote(){
+        let BallotPaper = BallotPaper {
+            voter: Voter(String::from("Claude")),
+            candidate: None,
+        };
+        let mut voting_machine = setup();
+                let result = voting_machine.vote(BallotPaper);
+                assert!(matches!(result, VoteOutcome::BlankVote(_)));
+    }
+
+    #[test]
+    fn invalid_vote(){
+        let BallotPaper = BallotPaper {
+            voter: Voter(String::from("Claude")),
+            candidate: Some(Candidate(String::from("Ouga Bouga"))),
+        };
+        let mut voting_machine = setup();
+                let result = voting_machine.vote(BallotPaper);
+                assert!(matches!(result, VoteOutcome::InvalidVote(_)));
+    }
+
+    #[test]
+    fn has_already_voted() {
+        let mut voting_machine = setup();
+        let voter = Voter(String::from("Claude"));
+        
+        let ballot_paper1 = BallotPaper {
+            voter: voter.clone(),
+            candidate: Some(Candidate(String::from("Grahargul le Destructeur de Mondes"))),
+        };
+        let result1 = voting_machine.vote(ballot_paper1);
+        assert!(matches!(result1, VoteOutcome::AcceptedVote(_, _)));
+
+        let ballot_paper2 = BallotPaper {
+            voter: voter.clone(),
+            candidate: Some(Candidate(String::from("Jean-Marie Bigard"))),
+        };
+        let result2 = voting_machine.vote(ballot_paper2);
+        assert!(matches!(result2, VoteOutcome::HasAlreadyVoted(_)));
+
+        let scoreboard = voting_machine.get_scoreboard();
+        assert_eq!(scoreboard.scores.get(&Candidate(String::from("Grahargul le Destructeur de Mondes"))).unwrap().0, 1);
+        assert_eq!(scoreboard.scores.get(&Candidate(String::from("Jean-Marie Bigard"))).unwrap().0, 0);
+    }
+}

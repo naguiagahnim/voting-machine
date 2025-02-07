@@ -91,6 +91,10 @@ impl VotingMachine {
     pub fn get_voters(&self) -> &AttendanceSheet {
         &self.voters
     }
+
+    pub fn recover_from(voters: AttendanceSheet, scoreboard: Scoreboard) -> Self {
+        Self {voters, scoreboard}
+    }
 }
 
 #[cfg(test)]

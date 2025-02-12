@@ -1,8 +1,9 @@
-use std::{io};
-use crate::configuration::Configuration;
+use std::io;
+use crate::configuration::{Configuration, StorageType};
 use crate::domain::{Candidate, Voter, BallotPaper, VoteOutcome, Scoreboard, VotingMachine};
 use crate::storage::Storage;
 use crate::storages::memory::Memory;
+use crate::storages::file::FileStore;
 
 fn create_voting_machine(configuration: &Configuration) -> VotingMachine {
     let candidates: Vec<Candidate> = configuration.candidates.iter().map(|c| Candidate(c.clone())).collect();
@@ -10,12 +11,12 @@ fn create_voting_machine(configuration: &Configuration) -> VotingMachine {
     VotingMachine::new(scoreboard)
 }
 
-pub async fn run_app(configuration: Configuration) -> anyhow::Result<()> {
+pub async fn handle_lines<Store: Storage>(configuration: Configuration) -> anyhow::Result<()> {
     println!("Bienvenue sur le serveur de vote !");
     println!("Les commandes valides sont : voter, votants ou score");
 
     let voting_machine = create_voting_machine(&configuration);
-    let mut storage = Memory::new(voting_machine).await?;
+    let mut storage = Store::new(voting_machine).await?;
 
     loop {
         let mut input = String::new();
@@ -66,5 +67,12 @@ pub async fn run_app(configuration: Configuration) -> anyhow::Result<()> {
             },
             _ => println!("Commande invalide ! Les commandes valides sont : voter, votants ou score"),
         }
+    }
+}
+
+pub async fn run_app(configuration: Configuration) -> anyhow::Result<()> {
+    match configuration.storage {
+        StorageType::Memory => handle_lines::<Memory>(configuration).await,
+        StorageType::File => handle_lines::<FileStore>(configuration).await,
     }
 }

@@ -1,4 +1,4 @@
-#[derive(PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Lexicon {
     pub blank: &'static str,
     pub candidate: &'static str,

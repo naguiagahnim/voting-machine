@@ -1,10 +1,10 @@
 use crate::interfaces::lexicon::Lexicon;
 
 impl Lexicon {
-    fn french() -> Self {
+    pub fn french() -> Self {
         Self {
             blank: "blanc",
-            candidate: "candidate",
+            candidate: "Candidat",
             voter: "voteur",
             attendencesheet: "feuille de présence",
             scoreboard: "tableau des scores",

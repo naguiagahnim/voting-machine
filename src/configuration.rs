@@ -1,12 +1,16 @@
 use clap::Parser;
 use clap::ValueEnum;
 
-use crate::interfaces::lexicon::Lexicon;
-
 #[derive(Clone, Copy, ValueEnum, Debug)]
 pub enum StorageType {
     File,
     Memory,
+}
+
+#[derive(Clone, Copy, ValueEnum, Debug)]
+pub enum Language {
+    en,
+    fr,
 }
 
 #[derive(Parser, Debug)]
@@ -17,7 +21,7 @@ pub struct Configuration {
     #[arg(short = 'm', long, value_delimiter = ',', num_args = 1)]
     pub storage: StorageType,
     #[arg(short = 'l', long, value_delimiter = ',', num_args = 1)]
-    pub lexicon: Lexicon,
+    pub language: Language ,
 }
 
 impl Configuration {

@@ -69,3 +69,78 @@ pub async fn handle_line<Store: Storage>(input: &str, controller: &mut VotingCon
         _ => Ok(format!("{} ! {} : voter, votants ou score", lexicon.invalid, lexicon.ballotpaper)),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::configuration::{Configuration, StorageType, Language};
+    use crate::storages::memory::Memory;
+    use std::io::Cursor;
+
+    fn setup() -> (VotingController<Memory>, Lexicon) {
+        let config = Configuration {
+            candidates: vec!["Alice".to_string(), "Bob".to_string()],
+            storage: StorageType::Memory,
+            language: Language::fr,
+        };
+        let lexicon = Lexicon::french();
+        let voting_machine = create_voting_machine(&config);
+        let store = Memory::new(voting_machine);
+        let controller = VotingController::new(store);
+        (controller, lexicon)
+    }
+
+    #[tokio::test]
+    async fn test_invalid_command() {
+        let (mut controller, lexicon) = setup();
+        let result = handle_line("commande_invalide", &mut controller, &lexicon).await.unwrap();
+        assert_eq!(result, "invalide ! bulletin de vote : voter, votants ou score");
+    }
+
+    #[tokio::test]
+    async fn test_show_voters() {
+        let (mut controller, lexicon) = setup();
+        let result = handle_line("votants", &mut controller, &lexicon).await.unwrap();
+        assert_eq!(result, "feuille de présence :\n");
+    }
+
+    #[tokio::test]
+    async fn test_show_scores() {
+        let (mut controller, lexicon) = setup();
+        let result = handle_line("score", &mut controller, &lexicon).await.unwrap();
+        assert_eq!(result, "tableau des scores :\n• Alice : 0\n• Bob : 0\n• blanc : 0\n• invalide : 0");
+    }
+
+    #[tokio::test]
+    async fn test_vote() {
+        let (mut controller, lexicon) = setup();
+        
+        let input = Cursor::new("Alice\nBob\n");
+        std::io::set_stdin(input);
+        
+        let result = handle_line("voter", &mut controller, &lexicon).await.unwrap();
+        assert_eq!(result, "résultat de vote accepté Bob");
+    }
+
+    #[tokio::test]
+    async fn test_blank_vote() {
+        let (mut controller, lexicon) = setup();
+        
+        let input = Cursor::new("Alice\n\n");
+        std::io::set_stdin(input);
+        
+        let result = handle_line("voter", &mut controller, &lexicon).await.unwrap();
+        assert_eq!(result, "résultat de vote blanc accepté");
+    }
+
+    #[tokio::test]
+    async fn test_missing_voter() {
+        let (mut controller, lexicon) = setup();
+        
+        let input = Cursor::new("\nBob\n");
+        std::io::set_stdin(input);
+        
+        let result = handle_line("voter", &mut controller, &lexicon).await.unwrap();
+        assert_eq!(result, "résultat de vote invalide accepté");
+    }
+}
